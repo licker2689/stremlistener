@@ -13,10 +13,17 @@ import java.awt.event.*;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import static com.lotrybill.AfricatvBroadcastStatus.getBroadcastStatus;
 
 
 public class soliairform {
+    private static final String[] BROADCASTER_IDS = ;
     private JPanel panel1;
 
     private JButton move;
@@ -71,9 +78,25 @@ public class soliairform {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
-        Properties pr = new Properties();
-        pr.setProperty("아이스크림", "집");
-        pr.store(
+        Properties pr = new Properties(); // config testing
+        ExecutorService executorService = Executors.newFixedThreadPool(3); // 최대 3개의 스레드로 제한
+
+        List<Future<String>> futures = new ArrayList<>();
+        for (String broadcasterId : BROADCASTER_IDS) {
+            futures.add((PopupMenu) executorService.submit(() -> getBroadcastStatus(broadcasterId)));
+        }
+
+        // 결과 출력
+        for (int i = 0; i < futures.size(); i++) {
+            try {
+                String result = futures.get(i).get();
+                System.out.println(BROADCASTER_IDS[i] + ": " + result);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        executorService.shutdown(); // ExecutorService 종료
     }
 
 }
