@@ -100,7 +100,7 @@ public class soliairForm {
 
             // YAML을 Java 객체로 변환
             Map<String, Object> data = yaml.load(inputStream);
-
+            BROADCASTER_IDS = (String[]) data.get("Broadcaster");
 
         } catch (Exception e) {
             e.printStackTrace();
