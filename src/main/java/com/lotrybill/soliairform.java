@@ -28,18 +28,21 @@ import java.util.Properties;
 
 public class soliairform {
     private static String[] BROADCASTER_IDS;
+
+    private static String[] STREAMER_IDS;
     private JPanel panel1;
 
     private JButton move;
     private JTextField url;
     private JButton register;
     private JTextField name;
-    private static JComboBox comboBox1;
+    private JComboBox<String> comboBox1;
     private JComboBox comboBox2;
 
     private String link;
     private static TwitchClient tc;
 
+    private static final String FILE_PATH = "config.properties";
 
     static EnvironmentConfiguration erc = new EnvironmentConfiguration();
 
@@ -79,6 +82,9 @@ public class soliairform {
     }
 
     public static void main(String args[]) throws IOException {
+        Properties prop = new Properties();
+        InputStream input = null;
+        OutputStream output = null;
         JFrame frame = new JFrame("App");
         frame.setContentPane(new soliairform().panel1);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -89,8 +95,49 @@ public class soliairform {
         Request request = new Request.Builder()
                 .url("wss://realtime.afreecatv.com/app")
                 .build();
+        try {
 
+            input = new FileInputStream(FILE_PATH);
+
+            // 프로퍼티 파일 로드
+            prop.load(input);
+
+            // 프로퍼티 값 읽기
+
+            // 프로퍼티 값 설정
+
+            output = new FileOutputStream(FILE_PATH);
+
+            // 프로퍼티 파일 저장
+            prop.store(output, null);
+
+        } catch (IOException ex) {
+            // 프로퍼티 파일이 없는 경우 기본값으로 파일 생성
+            try {
+                output = new FileOutputStream(FILE_PATH);
+
+                prop.store(output, null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } finally {
+            if (input != null) {
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         WebSocketListener listener = new WebSocketListener() {
+            JComboBox comboBox1 = new soliairform().comboBox1;
             @Override
             public void onOpen(WebSocket webSocket, okhttp3.Response response) {
                 for (String broadcasterId : BROADCASTER_IDS) {
@@ -142,23 +189,29 @@ public class soliairform {
         };
 
         WebSocket webSocket = client.newWebSocket(request, listener);
-
+        JComboBox comboBox1 = new soliairform().comboBox1;
         tc = TwitchClientBuilder.builder()
                 .withDefaultEventHandler(SimpleEventHandler.class)
                 .withEnableHelix(true)
                 .withClientId("0sakrzch56upazgqannei8xvfl8b14")
                 .withClientSecret("5ss9kojkeunzwmktdazrocf4plhv8g")
                 .build();
-
-        tc.getClientHelper().enableStreamEventListener("seahorse_shu");
+        for (String broadcasterId : STREAMER_IDS) {
+            tc.getClientHelper().enableStreamEventListener(broadcasterId);
+        }
         tc.getEventManager().setDefaultEventHandler(SimpleEventHandler.class);
         tc.getEventManager().getEventHandler(SimpleEventHandler.class).onEvent(ChannelGoLiveEvent.class, event -> {
-
+            comboBox1.addItem(event.getChannel().getName());
                     }
         );
         tc.getEventManager().getEventHandler(SimpleEventHandler.class).onEvent(ChannelGoOfflineEvent.class, e -> {
-
+            comboBox1.removeItem(e.getChannel().getName());
         });
+
+
+
+
+
     }
 }
 
