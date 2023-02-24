@@ -1,5 +1,10 @@
 package com.lotrybill;
 
+import com.github.philippheuer.events4j.simple.SimpleEventHandler;
+import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.TwitchClientBuilder;
+import com.github.twitch4j.events.ChannelGoLiveEvent;
+import com.github.twitch4j.events.ChannelGoOfflineEvent;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.WebSocket;
@@ -29,10 +34,12 @@ public class soliairform {
     private JTextField url;
     private JButton register;
     private JTextField name;
-    private JComboBox comboBox1;
+    private static JComboBox comboBox1;
     private JComboBox comboBox2;
 
     private String link;
+    private static TwitchClient tc;
+
 
     static EnvironmentConfiguration erc = new EnvironmentConfiguration();
 
@@ -82,7 +89,7 @@ public class soliairform {
         Request request = new Request.Builder()
                 .url("wss://realtime.afreecatv.com/app")
                 .build();
-        String lastStatus;
+
         WebSocketListener listener = new WebSocketListener() {
             @Override
             public void onOpen(WebSocket webSocket, okhttp3.Response response) {
@@ -106,6 +113,15 @@ public class soliairform {
 
                     String logMessage = broadcasterId + " 방송 상태: " + (status.equals("true") ? "방송 중" : "방송 종료");
                     System.out.println(logMessage);
+                    if (status.equals("true")){
+                        comboBox1.addItem(broadcasterId);
+                    } else if (status.equals("false")) {
+                        try {
+                            comboBox1.removeItem(broadcasterId);
+                        } catch (NullPointerException e){
+                            e.printStackTrace();
+                        }
+                    }
                 }
             }
 
@@ -126,6 +142,23 @@ public class soliairform {
         };
 
         WebSocket webSocket = client.newWebSocket(request, listener);
+
+        tc = TwitchClientBuilder.builder()
+                .withDefaultEventHandler(SimpleEventHandler.class)
+                .withEnableHelix(true)
+                .withClientId("0sakrzch56upazgqannei8xvfl8b14")
+                .withClientSecret("5ss9kojkeunzwmktdazrocf4plhv8g")
+                .build();
+
+        tc.getClientHelper().enableStreamEventListener("seahorse_shu");
+        tc.getEventManager().setDefaultEventHandler(SimpleEventHandler.class);
+        tc.getEventManager().getEventHandler(SimpleEventHandler.class).onEvent(ChannelGoLiveEvent.class, event -> {
+
+                    }
+        );
+        tc.getEventManager().getEventHandler(SimpleEventHandler.class).onEvent(ChannelGoOfflineEvent.class, e -> {
+
+        });
     }
 }
 
