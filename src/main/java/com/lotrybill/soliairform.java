@@ -21,13 +21,8 @@ import java.net.URISyntaxException;
 import java.util.Properties;
 
 
-
-
-
-
-
 public class soliairform {
-    private static String[] BROADCASTER_IDS ;
+    private static String[] BROADCASTER_IDS;
     private JPanel panel1;
 
     private JButton move;
@@ -132,7 +127,7 @@ public class soliairform {
 
         WebSocket webSocket = client.newWebSocket(request, listener);
     }
-    }
+}
 
 
 
