@@ -1,5 +1,5 @@
 package com.lotrybill;
-import org.json.simple.JSONObject;
+
 
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -34,4 +34,6 @@ public class AfricatvBroadcastStatus {
 
         return status.equals("true") ? "방송 중" : "방송 종료";
     }
+
+
 }

@@ -1,29 +1,33 @@
 package com.lotrybill;
 
-import lombok.Value;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
+import okio.ByteString;
 import org.apache.commons.configuration.EnvironmentConfiguration;
-import org.springframework.core.env.Environment;
 
-import javax.annotation.processing.RoundEnvironment;
+
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+
+
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Properties;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
-import static com.lotrybill.AfricatvBroadcastStatus.getBroadcastStatus;
+
+import java.util.Properties;
+
+
+
+
+
 
 
 public class soliairform {
-    private static final String[] BROADCASTER_IDS = ;
+    private static String[] BROADCASTER_IDS ;
     private JPanel panel1;
 
     private JButton move;
@@ -79,27 +83,59 @@ public class soliairform {
         frame.pack();
         frame.setVisible(true);
         Properties pr = new Properties(); // config testing
-        ExecutorService executorService = Executors.newFixedThreadPool(3); // 최대 3개의 스레드로 제한
-
-        List<Future<String>> futures = new ArrayList<>();
-        for (String broadcasterId : BROADCASTER_IDS) {
-            futures.add((PopupMenu) executorService.submit(() -> getBroadcastStatus(broadcasterId)));
-        }
-
-        // 결과 출력
-        for (int i = 0; i < futures.size(); i++) {
-            try {
-                String result = futures.get(i).get();
-                System.out.println(BROADCASTER_IDS[i] + ": " + result);
-            } catch (Exception e) {
-                e.printStackTrace();
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url("wss://realtime.afreecatv.com/app")
+                .build();
+        String lastStatus;
+        WebSocketListener listener = new WebSocketListener() {
+            @Override
+            public void onOpen(WebSocket webSocket, okhttp3.Response response) {
+                for (String broadcasterId : BROADCASTER_IDS) {
+                    String message = "{\"channel\":\"" + broadcasterId + "\",\"device\":\"pc\",\"type\":\"joinsession\"}";
+                    webSocket.send(message);
+                }
             }
-        }
 
-        executorService.shutdown(); // ExecutorService 종료
+            @Override
+            public void onMessage(WebSocket webSocket, String text) {
+                // 방송 상태 변경 이벤트를 수신한 경우 로그에 해당 상태를 출력
+                if (text.contains("\"type\":\"livechange\"")) {
+                    int startIndex = text.indexOf("\"channel\":\"") + "\"channel\":\"".length();
+                    int endIndex = text.indexOf("\"", startIndex);
+                    String broadcasterId = text.substring(startIndex, endIndex);
+
+                    startIndex = text.indexOf("\"live\":\"") + "\"live\":\"".length();
+                    endIndex = text.indexOf("\"", startIndex);
+                    String status = text.substring(startIndex, endIndex);
+
+                    String logMessage = broadcasterId + " 방송 상태: " + (status.equals("true") ? "방송 중" : "방송 종료");
+                    System.out.println(logMessage);
+                }
+            }
+
+            @Override
+            public void onMessage(WebSocket webSocket, ByteString bytes) {
+                // 바이트 스트림 메시지를 수신한 경우 이 부분에 로직 추가
+            }
+
+            @Override
+            public void onClosing(WebSocket webSocket, int code, String reason) {
+                // WebSocket이 종료될 때 이 부분에 로직 추가
+            }
+
+            @Override
+            public void onFailure(WebSocket webSocket, Throwable t, okhttp3.Response response) {
+                // WebSocket 통신이 실패한 경우 이 부분에 로직 추가
+            }
+        };
+
+        WebSocket webSocket = client.newWebSocket(request, listener);
+    }
     }
 
-}
+
+
 
 
 
