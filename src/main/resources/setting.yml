@@ -1,8 +1,6 @@
 version: 0.0.1
-Broadcaster:
-  -
-  -
-  -
-Streamer:
-  -
-  -
+name: 꿀멩이
+꿀멩이:
+  - platform: afreeca
+  - link: https://bj.afreecatv.com/ggulmengi
+  - id: ggulmengi

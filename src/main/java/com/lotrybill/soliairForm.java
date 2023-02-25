@@ -28,9 +28,10 @@ import java.net.URISyntaxException;
 
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
+
 
 
 public class soliairForm {
@@ -39,17 +40,16 @@ public class soliairForm {
     private static String[] STREAMER_IDS;
     private JPanel panel1;
     private JButton move;
-    private JTextField url;
     private JButton register;
     private JTextField name;
     private JComboBox<String> comboBox1;
-    private JComboBox comboBox2;
+    private JComboBox<String> comboBox2;
     public JPanel panel2;
     public JPanel panel3;
     public JPanel panel4;
+    public JTextField textField1;
     private String link;
     private static TwitchClient tc;
-    private static final String FILE_PATH = "config.properties";
 
     public soliairForm() {
         $$$setupUI$$$();
@@ -80,9 +80,39 @@ public class soliairForm {
         register.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JOptionPane aa = new JOptionPane();
-                aa.showMessageDialog(null, "구현중인 기능입니다.");
-
+                RandomAccessFile rf = null;
+                try {
+                    rf = new RandomAccessFile(soliairForm.class.getClassLoader().getResource("setting.yml").getFile(), "rwd");
+                } catch (FileNotFoundException ex) {
+                    throw new RuntimeException(ex);
+                }
+                try {
+                    if (comboBox2.getSelectedItem().toString() == "afreeca") {
+                        rf.writeChars(name.getText() + ":\n" +
+                                "  platform: " +
+                                comboBox2.getSelectedItem().toString() +
+                                "\n" +
+                                "  link: " +
+                                textField1.getText() +
+                                "\n" +
+                                "  id: " +
+                                textField1.getText().replace("https://bj.afreecatv.com/", "")
+                                + "\n");
+                    } else if (comboBox2.getSelectedItem().toString() == "twitch") {
+                        rf.writeChars(name.getText() + ":\n" +
+                                "  platform: " +
+                                comboBox2.getSelectedItem().toString() +
+                                "\n" +
+                                "  link: " +
+                                textField1.getText() +
+                                "\n" +
+                                "  id: " +
+                                textField1.getText().replace("https://www.twitch.tv/", "")
+                                + "\n");
+                    }
+                } catch (IOException exception) {
+                    throw new RuntimeException(exception);
+                }
             }
         });
     }
@@ -100,14 +130,19 @@ public class soliairForm {
 
             // YAML을 Java 객체로 변환
             Map<String, Object> data = yaml.load(inputStream);
-            BROADCASTER_IDS = (String[]) data.get("Broadcaster");
 
+            String[] s = data.get("name").toString().replace("{", "").replace("}", "").split(", ");
+            for (String s1 : s) {
+                Map<String, Object> data1  = (Map) data.get(s1);
+                if (data1.get("platform") == "twitch"){
+                    tc.getClientHelper().enableStreamEventListener(data1.get("id").toString());
+                }
+
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        InputStream input = null;
-        OutputStream output = null;
-        JFrame frame = new JFrame("App");
+        JFrame frame = new JFrame("솔레어 방송 조회기");
         frame.setContentPane(new soliairForm().panel1);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
@@ -120,7 +155,7 @@ public class soliairForm {
                 .build();
 
         WebSocketListener listener = new WebSocketListener() {
-            JComboBox comboBox1 = new soliairForm().comboBox1;
+            JComboBox<String> comboBox1 = new soliairForm().comboBox1;
 
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
@@ -173,7 +208,7 @@ public class soliairForm {
         };
 
         WebSocket webSocket = client.newWebSocket(request, listener);
-        JComboBox comboBox1 = new soliairForm().comboBox1;
+        JComboBox<String> comboBox1 = new soliairForm().comboBox1;
         tc = TwitchClientBuilder.builder()
                 .withDefaultEventHandler(SimpleEventHandler.class)
                 .withEnableHelix(true)
@@ -181,6 +216,7 @@ public class soliairForm {
                 .withClientSecret("5ss9kojkeunzwmktdazrocf4plhv8g")
                 .build();
         for (String broadcasterId : STREAMER_IDS) {
+            System.out.println(broadcasterId);
             tc.getClientHelper().enableStreamEventListener(broadcasterId);
         }
         tc.getEventManager().setDefaultEventHandler(SimpleEventHandler.class);
@@ -223,26 +259,26 @@ public class soliairForm {
         move.setText("이동하기");
         panel4.add(move, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(2, 4, new Insets(0, 0, 0, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(2, 5, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(panel3);
         panel3.setBorder(BorderFactory.createTitledBorder(null, "커스텀 등록", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-        url = new JTextField();
-        url.setName("URI");
-        url.setText("");
-        url.setToolTipText("방송 링크를 입력해주세요!");
-        panel3.add(url, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel3.add(spacer2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         register = new JButton();
         register.setText("등록하기");
-        panel3.add(register, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(register, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         name = new JTextField();
         name.setToolTipText("NAME");
         panel3.add(name, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         comboBox2 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
+        defaultComboBoxModel2.addElement("twitch");
+        defaultComboBoxModel2.addElement("afreeca");
         comboBox2.setModel(defaultComboBoxModel2);
-        panel3.add(comboBox2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(comboBox2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        textField1 = new JTextField();
+        textField1.setText("");
+        panel3.add(textField1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
     }
 
     /**
